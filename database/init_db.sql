@@ -63,11 +63,11 @@ CREATE TABLE IF NOT EXISTS payments (
 -- Ces informations seront utilisées par FPDF2 pour les rapports
 CREATE TABLE IF NOT EXISTS company_info (
     id INTEGER PRIMARY KEY CHECK (id = 1), -- Une seule ligne possible
-    nom TEXT DEFAULT 'RM LUXE BOIS',
-    ice TEXT DEFAULT '003436221000011',
-    rc TEXT DEFAULT '34569',
-    patente TEXT DEFAULT '39501774',
-    if_fiscal TEXT DEFAULT '60218199'
+    nom TEXT DEFAULT '**',
+    ice TEXT DEFAULT '**',
+    rc TEXT DEFAULT '**',
+    patente TEXT DEFAULT '**',
+    if_fiscal TEXT DEFAULT '**'
 );
 
 INSERT OR IGNORE INTO company_info (id, nom) VALUES (1, 'RM LUXE BOIS');
