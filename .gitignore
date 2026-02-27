@@ -15,3 +15,7 @@ database/*.db
 # Dossiers d'IDE
 .vscode/
 .idea/
+
+# Sécurité Streamlit
+.streamlit/secrets.toml
+.streamlit/
