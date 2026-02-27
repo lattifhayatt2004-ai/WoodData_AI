@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Base de données (On ne publie pas les données réelles)
+database/*.db
+
+# Environnement et Secrets
+.env
+.secrets
+
+# Dossiers d'IDE
+.vscode/
+.idea/

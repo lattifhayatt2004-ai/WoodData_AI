@@ -1,0 +1,7 @@
+streamlit
+google-generativeai
+num2words
+pandas
+fpdf2
+python-dotenv
+num2words
