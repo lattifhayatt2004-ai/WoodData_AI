@@ -7,16 +7,25 @@ from typing import List
 @dataclass
 class Article:
     descriptif: str
-    quantite: int
-    ml: float
-    pu_ht: float
-    calcul_type: str
+    quantite: int = 1
+    ml: float = 0.0
+    pu_ht: float = 0.0
+    calcul_type: str = "QxPU"
+    
+    def obtenir_montant_ht(self):
+        """Calcule automatiquement le montant de la ligne via le moteur de calcul."""
+        return calculer_ligne_ht(self.quantite, self.ml, self.pu_ht, self.calcul_type)
 
 @dataclass
 class Devis:
     client_id: int
     nom_projet: str
     articles: List[Article]
+    
+    def calculer_totaux(self):
+        """Génère le bilan financier complet du devis."""
+        lignes_ht = [art.obtenir_montant_ht() for art in self.articles]
+        return calculer_bilan_devis(lignes_ht)
 
 # 2. Implémentation du Moteur de Calcul (HT, TVA, TTC)
 def arrondir(valeur) :
@@ -35,41 +44,41 @@ def calculer_ligne_ht(quantite, ml, pu_ht, type_calcul="QxPU") :
     - QMLxPU : Quantité x Mètre Linéaire x Prix Unitaire
     """
     if type_calcul == "QxPU" :
-        result = quantite * pu_ht
+        result = Decimal(str(quantite)) * Decimal(str(pu_ht))
     elif type_calcul == "MLxPU" :
-        result = ml * pu_ht
+        result = Decimal(str(ml)) * Decimal(str(pu_ht))
     elif type_calcul == "QMLxPU" :
-        result = quantite * ml * pu_ht
+        result = Decimal(str(quantite)) * Decimal(str(ml)) * Decimal(str(pu_ht))
     else :
-        result = 0
+        result = Decimal("0")
     return arrondir(result)  
     
-def calculer_bilan_financier(lignes_ht, taux_tva=0.20) :
+def calculer_bilan_devis(lignes_ht, taux_tva=0.20):
     """
-    Calcule les totaux globales avec arrondi au centime près
+    Calcule le total global HT, TVA et TTC avec une rigueur absolue[cite: 48].
     """
     total_ht = sum(lignes_ht)
-    total_ht_arrondi = arrondir(total_ht)
-    # Calcul du total TVA
-    total_tva = total_ht_arrondi * Decimal(str(taux_tva))
-    total_tva_arrondi = arrondir(total_tva)
-    # Calcul du total TTC
-    total_ttc = total_ht_arrondi + total_tva_arrondi
+    total_tva = total_ht * Decimal(str(taux_tva))
+    total_ttc = total_ht + total_tva
+    
     return {
-            "total_ht": float(total_ht_arrondi),
-            "total_tva": float(total_tva_arrondi),
-            "total_ttc": float(total_ttc)
+        "total_ht": arrondir(total_ht),
+        "total_tva": arrondir(total_tva),
+        "total_ttc": arrondir(total_ttc)
     }
 
 # 3. Algorithme de gestion des relicats
-def verifier_reliquat(montant_article, total_deja_facture, nouveau_montant_facture):
+def valider_facture_situation(total_devis, total_deja_facture, nouveau_montant):
     """
-    Vérifie si la nouvelle facture ne dépasse pas le reliquat de l'article
+    Vérifie si la facture ne dépasse pas le reste à facturer du devis[cite: 9, 51].
     """
-    reliquat = montant_article - total_deja_facture
-    if nouveau_montant_facture > reliquat:
-        return False, f"Dépassement de reliquaat ! Disponible : {reliquat} MAD "
-    return True, reliquat-nouveau_montant_facture
+    reliquat = Decimal(str(total_devis)) - Decimal(str(total_deja_facture))
+    nouveau_montant = Decimal(str(nouveau_montant))
+    
+    if nouveau_montant > reliquat:
+        return False, f"Dépassement de reliquat ! Maximum autorisé : {reliquat} MAD"
+    
+    return True, reliquat - nouveau_montant
 
 # 4. Module de Conversion en Toutes Lettres
 def montant_en_lettres(montant) :

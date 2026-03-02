@@ -1,5 +1,5 @@
 streamlit
-google-generativeai
+google-genai
 num2words
 pandas
 fpdf2

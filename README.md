@@ -1,57 +1,61 @@
-# WoodData AI — Système Intelligent de Gestion de Menuiserie
+# 🪵 WoodData AI — Système Intelligent de Gestion de Menuiserie
 
-**WoodData AI** est une solution métier "End-to-End" conçue pour **une entreprise de bois** afin de digitaliser et d'automatiser le cycle de vie complet des projets de menuiserie.
+**WoodData AI** est une solution métier "End-to-End" conçue pour digitaliser et automatiser le cycle de vie complet des projets de menuiserie pour l'entreprise **RM LUXE BOIS**.
 
 ---
 
-## 🗺️ Cartographie du Système (Project Architecture)
+## 🗺️ Cartographie du Système (Architecture)
 
-L'application est structurée autour de quatre piliers technologiques et fonctionnels :
+L'application repose sur un pipeline robuste intégrant l'IA générative au cœur des processus financiers :
 
 ### 1. Ingestion Intelligente (IA & NLP)
-* **Technologie** : Gemini 1.5 Flash (Multimodal).
-* **Fonction** : Extraction automatisée de données structurées (JSON) à partir de notes de chantiers, messages ou PDF.
-* **Données extraites** : Désignation des articles, quantités, métrages linéaires (ML) et prix unitaires HT.
+* **Moteur** : Gemini 2.5 Flash / 1.5 Flash (via SDK `google-genai` 2026).
+* **Fonction** : Extraction de données structurées (JSON) avec formatage sémantique (ex: **NOM** en gras).
+* **Entités** : Désignation technique, Quantité, ML, PU HT.
 
 ### 2. Moteur Financier (Business Logic)
-* **Technologie** : Python (Decimal library).
-* **Rigueur** : Gestion absolue des arrondis au centime près (règle $\ge 5$).
-* **Calculs** : Automatisation des formules HT, TVA (20%) et TTC.
-* **Contrôle de Cohérence** : Algorithme de gestion des reliquats empêchant de facturer au-delà du devis initial ($\sum \text{Factures} \le \text{Montant Devis}$).
+* **Technologie** : Python (Library `decimal`).
+* **Précision** : Gestion stricte des arrondis au centime et conformité fiscale (TVA 20%).
+* **Contrôle** : Algorithme anti-dépassement ($\sum \text{Factures} \le \text{Devis}$).
 
-### 3. Persistance & Modélisation (Data Layer)
-* **Technologie** : SQLite.
-* **Schéma Relationnel** : Architecture $1 \text{ Client} \rightarrow N \text{ Devis} \rightarrow N \text{ Factures/Paiements}$.
-* **Traçabilité** : Chaque flux financier est imputé à un projet spécifique pour un audit en temps réel.
-
-### 4. Interface & Reporting (User Experience)
-* **Interface** : Dashboard Streamlit pour le suivi de la trésorerie et de l'avancement.
-* **Reporting** : Moteur FPDF2 pour la génération de devis, factures de situation et états d'avancement conformes.
-* **Légalité** : Intégration automatique des mentions de l'entreprise (ICE, RC, IF, Patente) et conversion des montants en toutes lettres.
+### 3. Persistance (Data Layer)
+* **Database** : SQLite (`wooddata.db`).
+* **Audit** : Système de `audit_logs` intégré pour tracer chaque mouvement financier.
 
 ---
 
-## 🛠️ Stack Technique
+## 🛠️ Stack Technique & Installation
+
 | Composant | Technologie |
 | :--- | :--- |
-| **Backend** | Python 3.10+ |
-| **Database** | SQLite |
-| **LLM** | Gemini 1.5 Flash (API Google AI) |
+| **Langage** | Python 3.10+ |
+| **IA SDK** | `google-genai` (v2026) |
 | **Frontend** | Streamlit |
-| **PDF** | FPDF2 |
+| **Database** | SQLite3 |
+
+### Installation Rapide
+1. Cloner le repository.
+2. Installer les dépendances : `pip install -r requirements.txt`.
+3. Configurer le secret : Créer `.streamlit/secrets.toml` et y ajouter votre `GEMINI_API_KEY`.
 
 ---
 
-## 🚀 État d'avancement (Project Roadmap)
-* **Phase 1 : Fondations & Data** (Terminé) : Modélisation SQL et Moteur de calcul financier.
-* **Phase 2 : Intelligence & Ingestion** (En cours) : Pipeline d'extraction multimodal et connecteur IA-DB.
-* **Phase 3 : Interface & Visualisation** (Prévu) : Dashboard et Moteur de reporting PDF.
-* **Phase 4 : Tests & Déploiement** (Prévu) : Validation finale sur données réelles.
+## 🚀 État d'avancement (Roadmap)
+
+### ✅ Phase 1 : Fondations & Sécurité (TERMINÉ)
+* Modélisation SQL (Tables Clients, Projets, Finance, Audit).
+* Moteur de calcul financier (Logique Decimal).
+* Système d'authentification et logs de sécurité.
+
+### 🔄 Phase 2 : Ingestion & Intelligence (EN COURS)
+* **Statut Jour 3** : Pipeline d'extraction fonctionnel (Test de cohérence validé).
+* **Prochaine étape (Jour 4)** : Validation des schémas de données et mise en cache des requêtes IA.
+
+### 📅 Phase 3 & 4 : Reporting & Déploiement (À VENIR)
+* Moteur PDF (FPDF2) pour Devis/Factures.
+* Dashboard de pilotage de trésorerie.
 
 ---
 
-## ⚖️ Mentions Légales Intégrées
-Le système génère automatiquement les documents avec les identifiants fiscaux de l'entreprise :
-* **ICE / RC / IF / Patente** 
-* **Numérotation séquentielle des factures**
-* **Montants TTC en toutes lettres**
+## ⚖️ Conformité & Gouvernance
+Le système assure la génération de documents légaux incluant les mentions obligatoires de l'entreprise (ICE, RC, IF, Patente) et la conversion automatique des montants en toutes lettres.
