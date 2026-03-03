@@ -4,4 +4,5 @@ num2words
 pandas
 fpdf2
 python-dotenv
-num2words
+pydantic
+typing

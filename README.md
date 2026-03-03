@@ -1,10 +1,10 @@
-# 🪵 WoodData AI — Système Intelligent de Gestion de Menuiserie
+# WoodData AI — Système Intelligent de Gestion de Menuiserie
 
 **WoodData AI** est une solution métier "End-to-End" conçue pour digitaliser et automatiser le cycle de vie complet des projets de menuiserie pour l'entreprise **RM LUXE BOIS**.
 
 ---
 
-## 🗺️ Cartographie du Système (Architecture)
+## Cartographie du Système (Architecture)
 
 L'application repose sur un pipeline robuste intégrant l'IA générative au cœur des processus financiers :
 
@@ -24,7 +24,7 @@ L'application repose sur un pipeline robuste intégrant l'IA générative au cœ
 
 ---
 
-## 🛠️ Stack Technique & Installation
+## Stack Technique & Installation
 
 | Composant | Technologie |
 | :--- | :--- |
@@ -40,22 +40,22 @@ L'application repose sur un pipeline robuste intégrant l'IA générative au cœ
 
 ---
 
-## 🚀 État d'avancement (Roadmap)
+## État d'avancement (Roadmap)
 
-### ✅ Phase 1 : Fondations & Sécurité (TERMINÉ)
+### Phase 1 : Fondations & Sécurité (TERMINÉ)
 * Modélisation SQL (Tables Clients, Projets, Finance, Audit).
 * Moteur de calcul financier (Logique Decimal).
 * Système d'authentification et logs de sécurité.
 
-### 🔄 Phase 2 : Ingestion & Intelligence (EN COURS)
-* **Statut Jour 3** : Pipeline d'extraction fonctionnel (Test de cohérence validé).
-* **Prochaine étape (Jour 4)** : Validation des schémas de données et mise en cache des requêtes IA.
+### Phase 2 : Ingestion & Intelligence (EN COURS)
+* **Statut** : Pipeline d'extraction fonctionnel (Test de cohérence validé) et Validation stricte des schémas, typage financier avec Decimal et traçabilité des actions dans le journal d'audit.
+* **Prochaine étape (Jour 5)** : Test d'ingestion multimodal sur documents réels pour valider le flux complet IA → Validation Humaine → SQL.
 
-### 📅 Phase 3 & 4 : Reporting & Déploiement (À VENIR)
+### Phase 3 & 4 : Reporting & Déploiement (À VENIR)
 * Moteur PDF (FPDF2) pour Devis/Factures.
 * Dashboard de pilotage de trésorerie.
 
 ---
 
-## ⚖️ Conformité & Gouvernance
+## Conformité & Gouvernance
 Le système assure la génération de documents légaux incluant les mentions obligatoires de l'entreprise (ICE, RC, IF, Patente) et la conversion automatique des montants en toutes lettres.
