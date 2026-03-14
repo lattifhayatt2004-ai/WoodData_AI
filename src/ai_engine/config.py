@@ -23,6 +23,12 @@ LOGIQUE MÉTIER :
 - Identifie les clients comme AKDITAL ou KG DESIGN.
 - Ne jamais inventer de données. Si une info manque, utilise null.
 - Sortie : JSON uniquement.
+
+Return ONLY valid JSON.
+Do not include explanations.
+Do not include markdown.
+Do not include text before or after the JSON.
+
 """
 
 # 3. Configuration de génération (Stabilité & Rigueur)

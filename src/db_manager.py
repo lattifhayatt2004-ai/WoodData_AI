@@ -2,6 +2,8 @@ import sqlite3
 import os
 import hashlib
 from datetime import datetime
+from decimal import Decimal
+from src.utils.finance import calculer_bilan_devis
 
 # Chemins absolus pour éviter les erreurs de dossier
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -152,6 +154,57 @@ def obtenir_montant_devis(devis_id):
     except Exception as e:
         print(f"Erreur lors de la lecture du devis : {e}")
         return 0.0
+    finally:
+        conn.close()
+        
+
+def sauvegarder_extraction_ia(data, user_id):
+    """
+    Transforme le JSON de Gemini en Client, Projet et Articles en base.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    try:
+        # 1. Gérer le Client (On le crée s'il n'existe pas)
+        cursor.execute("SELECT id_client FROM clients WHERE nom_client = ?", (data.client,))
+        res = cursor.fetchone()
+        if res:
+            id_client = res[0]
+        else:
+            cursor.execute("INSERT INTO clients (nom_client) VALUES (?)", (data.client,))
+            id_client = cursor.lastrowid
+
+        # 2. Calculer les totaux financiers du projet via ton moteur finance.py
+        # On convertit les Decimal en float pour SQLite
+        lignes_ht = [Decimal(str(item.pu_ht)) * Decimal(str(item.quantite or 1)) for item in data.lignes]
+        bilan = calculer_bilan_devis(lignes_ht)
+
+        # 3. Créer le Projet (table projects)
+        cursor.execute("""
+            INSERT INTO projects (id_client, nom_project, total_ht, total_ttc)
+            VALUES (?, ?, ?, ?)
+        """, (id_client, f"Dossier {data.client}", float(bilan['total_ht']), float(bilan['total_ttc'])))
+        id_project = cursor.lastrowid
+
+        # 4. Insérer chaque article (table project_items)
+        for item in data.lignes:
+            cursor.execute("""
+                INSERT INTO project_items (id_project, designation, quantite, metrage, pu_ht)
+                VALUES (?, ?, ?, ?, ?)
+            """, (id_project, item.designation, item.quantite, item.ml, float(item.pu_ht)))
+
+        conn.commit()
+        
+        # 5. Tracer l'action dans l'audit log
+        enregistrer_log(user_id, "IMPORT_IA_SUCCESS", "projects", id_project, f"Client: {data.client}")
+        
+        return id_project
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Erreur lors de la sauvegarde IA : {e}")
+        return None
     finally:
         conn.close()
     

@@ -10,6 +10,7 @@ from src.db_manager import (
     creer_utilisateur, 
     verifier_connexion, 
     enregistrer_log, 
+    sauvegarder_extraction_ia,
     DB_PATH
 )
 import sqlite3
@@ -41,24 +42,65 @@ def test_system_complet():
     assert autorise is False
     print("✅ Finance : OK")
     
-    # On teste avec ton exemple complexe de menuiserie
-    entree_test = "2 Cadre chambreur habillé contreplaqué chêne joint PVC quatre paumelles invisible à 1200 HT"
+# Simulation du contenu du devis 000180 (Document Réel)
+    entree_test = """
+    Porte Chêne Ep. 5 cm contreplaqué double Cadre chambreur habillé 
+    contreplaqué chêne joint PVC Quatre paumelles papillons Inox 
+    Serrure Canaux. Sans poignet. Quantité: 23. Prix/Unité: 3300 HT.
+    """
 
-    print("--- TEST D'INGESTION WOODDATA AI ---")
+    print("\n--- TEST SUR DOCUMENT RÉEL (DEVIS 000180) ---")
     try:
+        # 1. Extraction par l'IA
         resultat = extract_wood_data(entree_test)
-    
-        print(f"Entrée : {entree_test}")
-        print(f"Sortie JSON : {resultat}")
-    
-       # Vérification visuelle du formatage en gras
-        if "**" in resultat['designation']:
-            print("✅ SUCCÈS : Le nom est bien en gras.")
-        else:
-            print("❌ ERREUR : Le nom n'est pas en gras.")
+        print(f"Client identifié : {resultat.client}")
+        print(f"Articles extraits : {len(resultat.lignes)}")
         
+        # 2. Sauvegarde en base
+        id_projet = sauvegarder_extraction_ia(resultat, id_user)
+        
+        if id_projet:
+            print(f"✅ SUCCÈS : Le document complexe a été transformé en Projet ID {id_projet}")
+            
+            # Vérification du montant (23 * 3300 = 75 900 HT)
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("SELECT total_ht FROM projects WHERE id_project = ?", (id_projet,))
+            total_db = cursor.fetchone()[0]
+            print(f"📊 Vérification Financière : {total_db} MAD HT (Attendu: 75900.0)")
+            conn.close()
+        else:
+            print("❌ ÉCHEC : La sauvegarde a échoué.")
+
     except Exception as e:
-        print(f"❌ Erreur lors du test : {e}")
+        print(f"❌ Erreur lors de l'analyse du document : {e}")
+
+
+    print("\n--- TEST DE PERSISTENCE SQL ---")
+
+    id_projet = sauvegarder_extraction_ia(resultat, id_user)
+        
+    if id_projet:
+        print(f"✅ Sauvegarde SQL : OK (Projet ID: {id_projet})")
+            
+     # Vérification réelle dans la base
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+            
+        # Vérifier que le projet existe
+        cursor.execute("SELECT nom_project, total_ttc FROM projects WHERE id_project = ?", (id_projet,))
+        projet = cursor.fetchone()
+        print(f"📊 Données en base : {projet[0]} | Total : {projet[1]} MAD")
+            
+        # Vérifier l'audit log
+        cursor.execute("SELECT action FROM audit_logs WHERE id_enregistrement = ?", (id_projet,))
+        log = cursor.fetchone()
+        if log and log[0] == "IMPORT_IA_SUCCESS":
+            print("✅ Traçabilité : OK (Log d'audit trouvé)")
+                
+            conn.close()
+    else:
+        print("❌ Sauvegarde SQL : ÉCHEC")
     
     print("\n--- TOUS LES TESTS SONT RÉUSSIS ! ---")
 

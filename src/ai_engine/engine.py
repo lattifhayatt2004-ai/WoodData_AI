@@ -8,12 +8,13 @@ import sqlite3
 
 def extract_wood_data(user_input: str) -> WoodDataResponse:
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="models/gemini-2.5-flash",
         contents=user_input,
         config={
             "system_instruction": SYSTEM_INSTRUCTION,
             "temperature": 0.1,
             "response_mime_type": "application/json",
+            "response_schema": WoodDataResponse.model_json_schema(),
         },
     )
 
