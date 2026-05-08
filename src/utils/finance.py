@@ -90,5 +90,30 @@ def montant_en_lettres(montant) :
     texte = num2words(entier, lang='fr') + " dirhams"
     if centimes > 0 :
         texte += " et " + num2words(centimes, lang='fr') + " centimes"
-        
     return texte.capitalize()
+     
+def calculer_ecart_financier(total_a, total_b):
+    """Calcule la différence entre deux montants avec précision Decimal."""
+    return arrondir(Decimal(str(total_a)) - Decimal(str(total_b)))
+        
+def generer_plan_ventilation (montant_facture, articles_disponibles) :
+    """
+    Calcule la répartition d'un montant sur une liste d'articles (Seau par seau).
+    articles_disponibles : liste de dicts {'id_item': x, 'reste': y}
+    """
+    ventilation = []
+    reste_a_distribuer = Decimal(str(montant_facture))
+    
+    for art in articles_disponibles:
+        if reste_a_distribuer <= 0: break
+        
+        reliquat_art = Decimal(str(art['reste']))
+        if reliquat_art > 0:
+            allocation = min(reliquat_art, reste_a_distribuer)
+            ventilation.append({
+                "id_item": art['id_item'],
+                "montant_pris": float(arrondir(allocation))
+            })
+            reste_a_distribuer -= allocation
+            
+    return ventilation

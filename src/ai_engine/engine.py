@@ -1,10 +1,17 @@
 # src/ai_engine/engine.py
 from pydantic import ValidationError
+import re
+from google import genai
 from .config import client, SYSTEM_INSTRUCTION
-from .validator import WoodDataResponse
+from .validator import WoodDataResponse, WoodDataInvoiceResponse
 import json
 import streamlit as st
 import sqlite3
+import os
+
+# Force le chemin absolu pour éviter le "no such table"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DB_PATH = os.path.join(BASE_DIR, 'database', 'wooddata.db')
 
 def extract_wood_data(user_input: str) -> WoodDataResponse:
     response = client.models.generate_content(
@@ -49,16 +56,26 @@ def extract_wood_data_cached(user_input: str):
     #Appelle ma fonction de validation crée précédement
     return extract_wood_data(user_input)
 
-def log_action(user_id:int, action: str, details: dict):
-    """Enregistre une trace indélébile dans la base SQLite"""
-    conn = sqlite3.connect("wooddata.db", timeout=10)
+def log_action(user_id: int, action: str, details: dict):
+    """Enregistre une trace dans la base RM LUXE BOIS avec le bon chemin."""
+    # Vérification de sécurité pour le développeur
+    if not os.path.exists(DB_PATH):
+        raise FileNotFoundError(f"La base de données est introuvable au chemin : {DB_PATH}")
+
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     cursor = conn.cursor()
-    cursor.execute(
-    "INSERT INTO audit_logs (user_id, action_type, details) VALUES (?, ?, ?)",
-        (user_id, action, json.dumps(details))
-    )
-    conn.commit()
-    conn.close()
+    try:
+        # Correction du nom de colonne : 'action' au lieu de 'action_type' [cite: 70]
+        cursor.execute(
+            "INSERT INTO audit_logs (id_user, action, details) VALUES (?, ?, ?)",
+            (user_id, action, json.dumps(details))
+        )
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        print(f"Erreur SQL : {e}")
+        raise e
+    finally:
+        conn.close()
     
 def extract_and_log(current_user_id: int, user_input: str):
     try:
@@ -75,3 +92,26 @@ def extract_and_log(current_user_id: int, user_input: str):
     except Exception as e:
         log_action(current_user_id, "IA_EXTRACTION_FAILURE", {"error": str(e)})
         raise
+    
+def extract_invoice_data(prompt_enrichi: str) -> WoodDataInvoiceResponse:
+    """
+    Analyse les notes et le contexte pour générer une proposition de facture
+    """
+    reponse = client.models.generate_content(
+        model="models/gemini-2.5-flash",
+        contents=prompt_enrichi,
+        config={
+            "system_instruction": SYSTEM_INSTRUCTION,
+            "temperature": 0.1,
+            "response_mime_type": "application/json",
+            "response_schema": WoodDataInvoiceResponse.model_json_schema(),
+        },
+    )
+    
+    try:
+        #Nettoyage et validation
+        cleaned =re.sub(r"^```json\s*", "", reponse.text.strip())
+        return WoodDataInvoiceResponse.model_validate(json.loads(cleaned))
+    except Exception as e:
+        raise ValueError(f"Erreur d'analyse comptable IA : {e}")
+    

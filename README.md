@@ -1,61 +1,83 @@
-# WoodData AI — Système Intelligent de Gestion de Menuiserie
+# WoodData AI — Système Intelligent de Gestion pour RM LUXE BOIS
 
-**WoodData AI** est une solution métier "End-to-End" conçue pour digitaliser et automatiser le cycle de vie complet des projets de menuiserie pour l'entreprise **RM LUXE BOIS**.
-
----
-
-## Cartographie du Système (Architecture)
-
-L'application repose sur un pipeline robuste intégrant l'IA générative au cœur des processus financiers :
-
-### 1. Ingestion Intelligente (IA & NLP)
-* **Moteur** : Gemini 2.5 Flash / 1.5 Flash (via SDK `google-genai` 2026).
-* **Fonction** : Extraction de données structurées (JSON) avec formatage sémantique (ex: **NOM** en gras).
-* **Entités** : Désignation technique, Quantité, ML, PU HT.
-
-### 2. Moteur Financier (Business Logic)
-* **Technologie** : Python (Library `decimal`).
-* **Précision** : Gestion stricte des arrondis au centime et conformité fiscale (TVA 20%).
-* **Contrôle** : Algorithme anti-dépassement ($\sum \text{Factures} \le \text{Devis}$).
-
-### 3. Persistance (Data Layer)
-* **Database** : SQLite (`wooddata.db`).
-* **Audit** : Système de `audit_logs` intégré pour tracer chaque mouvement financier.
+**WoodData AI** est une solution métier "End-to-End" conçue pour digitaliser et automatiser le cycle de vie complet des projets de menuiserie. Ce système transforme des notes de chantier brutes en données structurées et assure un suivi financier rigoureux.
 
 ---
 
-## Stack Technique & Installation
+## 🏗️ Architecture Technique (Fiche Spécificative)
 
-| Composant | Technologie |
-| :--- | :--- |
-| **Langage** | Python 3.10+ |
-| **IA SDK** | `google-genai` (v2026) |
-| **Frontend** | Streamlit |
-| **Database** | SQLite3 |
+Le projet est structuré selon une architecture découplée pour garantir la fiabilité des calculs et la persistance des données.
 
-### Installation Rapide
-1. Cloner le repository.
-2. Installer les dépendances : `pip install -r requirements.txt`.
-3. Configurer le secret : Créer `.streamlit/secrets.toml` et y ajouter votre `GEMINI_API_KEY`.
+* **Interface** : Streamlit (Dashboard réactif et gestion des flux).
+* **Base de données** : SQLite3 (Stockage local robuste).
+* **Moteur IA** : Gemini 1.5 Flash (Analyse de notes de chantier et ventilation de factures via Prompt Engineering).
+* **Traitement de Données** : Pandas (Reporting) et Decimal (Calculs financiers).
 
 ---
 
-## État d'avancement (Roadmap)
+### 1. Moteur Financier (`src/utils/finance.py`)
+Le "cerveau" mathématique du système, garantissant une précision comptable absolue :
+* **Précision Décimale** : Utilisation de la bibliothèque `decimal` pour éviter les erreurs de flottants binaires.
+* **Règle d'Arrondi Standard** : Implémentation de `ROUND_HALF_UP` (arrondi au centime supérieur si le 3ème chiffre ≥ 5).
+* **Formules Métier Supportées** :
+    - **QxPU** : Quantité × Prix Unitaire.
+    - **MLxPU** : Mètre Linéaire × Prix Unitaire.
+    - **QMLxPU** : Quantité × Mètre Linéaire × Prix Unitaire.
+* **Conversion Textuelle** : Module `num2words` intégré pour la transcription des montants en toutes lettres sur les documents légaux.
+* **`calculer_bilan_devis(lignes_ht, taux_tva)`** : Agrégateur financier. Calcule le Total HT, la TVA (20%) et le Total TTC global.
+* **`generer_plan_ventilation(montant, articles)`** : L'algorithme de "Cascade". Reçoit un montant de facture et répartit l'argent article par article jusqu'à épuisement, en respectant les priorités d'ID.
+* **`montant_en_lettres(nombre)`** : Moteur de transcription pour la validité juridique des documents.
 
-### Phase 1 : Fondations & Sécurité (TERMINÉ)
-* Modélisation SQL (Tables Clients, Projets, Finance, Audit).
-* Moteur de calcul financier (Logique Decimal).
-* Système d'authentification et logs de sécurité.
-
-### Phase 2 : Ingestion & Intelligence (EN COURS)
-* **Statut** : Pipeline d'extraction fonctionnel (Test de cohérence validé) et Validation stricte des schémas, typage financier avec Decimal et traçabilité des actions dans le journal d'audit.
-* **Prochaine étape (Jour 5)** : Test d'ingestion multimodal sur documents réels pour valider le flux complet IA → Validation Humaine → SQL.
-
-### Phase 3 & 4 : Reporting & Déploiement (À VENIR)
-* Moteur PDF (FPDF2) pour Devis/Factures.
-* Dashboard de pilotage de trésorerie.
+### 2. Gestionnaire de Données (`src/db_manager.py`)
+Le "bibliothécaire" gérant les interactions avec la base SQLite :
+* **Persistance** : CRUD complet pour les Clients, Projets, Devis et Factures.
+* **Sécurité RBAC** : Gestion des rôles (ADMIN/EMPLOYE) avec hachage des mots de passe (`sha256`).
+* **Logique de Projet** : Un projet est défini par la validation d'un devis spécifique parmi plusieurs versions possibles.
 
 ---
 
-## Conformité & Gouvernance
-Le système assure la génération de documents légaux incluant les mentions obligatoires de l'entreprise (ICE, RC, IF, Patente) et la conversion automatique des montants en toutes lettres.
+### 3. Logique de "Monnaie" & Facturation
+* **Facturation Séquentielle** : Algorithme de "Cascade" (remplissage des seaux) : un article n'est facturé que si le précédent est totalement soldé.
+* **Audit Trail (Traçabilité)** : Table `audit_logs` enregistrant chaque modification sensible (ex: changement de montant de facture avec historique Ancien vs Nouveau).
+* **Reliquats** : Calcul dynamique du "Reste à Facturer" (Devis vs Facture) et du "Reste à Percevoir" (Facture vs Paiement).
+
+---
+
+## 4. Spécifications du Schéma de Données (`init_db.sql`)
+
+La base de données est normalisée pour éviter la redondance et permettre un audit complet :
+* **`users`** : Gestion des accès RBAC (Admin/Employé) avec mots de passe hachés.
+* **`estimates`** : Permet le versioning (v1, v2) d'un même projet avant validation.
+* **`project_items`** : Stocke le détail technique (dimensions, type de calcul, prix unitaire).
+* **`audit_logs`** : Journalise chaque événement critique du système.
+
+---
+
+## 5. Pipeline d'Intelligence Artificielle (Workflow Gemini)
+
+L'intégration de Gemini 1.5 Flash suit un protocole de validation strict :
+1.  **Extraction** : L'IA analyse les notes brutes et identifie les articles et prix.
+2.  **Validation** : Le système affiche un aperçu via `st.data_editor` pour correction manuelle avant insertion.
+3.  **Structuration** : Transformation des données en objets Python `Article` et `Devis` via le module `finance.py` pour garantir la conformité des calculs avant la sauvegarde SQL.
+
+## 🚀 Fonctionnalités Clés Implémentées
+
+* **Dashboard Admin** : Vue globale sur le CA Total, l'Encaissé et la Dette Client.
+* **Extraction IA** : Transformation de texte brut en lignes de devis structurées avec validation manuelle.
+* **Intervention Rapide** : Création de projets manuels avec validation immédiate pour les travaux urgents.
+* **Reporting Avancé** : Analyse du taux de recouvrement par projet ou par client.
+* **Versioning** : Historique des modifications financières pour une transparence totale.
+
+---
+
+## 📂 Structure du Projet
+
+```text
+WOODDATA_AI/
+├── src/
+│   ├── ai_engine/    # Moteur d'intelligence artificielle
+│   ├── utils/       # finance.py (Calculs et conversions)
+│   └── db_manager.py # Logic de base de données
+├── database/        # wooddata.db & init_db.sql
+├── assets/          # Logo_RMLB.png & ressources visuelles
+└── app.py           # Point d'entrée Streamlit

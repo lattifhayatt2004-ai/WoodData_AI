@@ -20,3 +20,19 @@ class WoodDataResponse(BaseModel) :
     """shéma global de la réponse IA"""
     client: str = Field(..., min_length=2)
     lignes: List[WoodDataItem]
+    
+class FactureVentilation(BaseModel):
+    id_item: int = Field(..., description="L'ID unique de l'article provenant du contexte")
+    designation: str = Field(..., description="Nom de l'article pour vérification visuelle")
+    montant_pris: Decimal = Field(..., ge=0, description="Montant exact prélevé sur cet article")
+
+    @field_validator('montant_pris')
+    def force_decimal_precision(cls, v):
+        return Decimal(str(v)).quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    
+class WoodDataInvoiceResponse(BaseModel):
+    num_facture_propose: str = Field(..., pattern=r"^Facture-Client-\d{3}$")
+    id_project: int
+    montant_total_facture: Decimal
+    ventilation: List[FactureVentilation]
+    statut_comptable: str = Field("CONFORME", pattern="^(CONFORME|OVERFLOW_ERROR)$")
